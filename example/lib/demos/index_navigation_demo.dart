@@ -20,9 +20,7 @@ class _IndexNavigationDemoState extends State<IndexNavigationDemo> {
 
   final _controller = FlashListViewController();
 
-  // `getVisibleRange()` returns `FlashListViewVisibleRange`, which the package
-  // does not export, so we capture its fields into a record at the call site.
-  ({int first, int last, double height})? _range;
+  FlashListViewVisibleRange? _range;
 
   // Deterministic "random" heights so jumps must rely on onItemHeight.
   double _heightFor(int index) => 48 + (index % 5) * 16;
@@ -37,15 +35,7 @@ class _IndexNavigationDemoState extends State<IndexNavigationDemo> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final range = _controller.sliverController.getVisibleRange();
-      if (range != null) {
-        setState(
-          () => _range = (
-            first: range.firstIndex,
-            last: range.lastIndex,
-            height: range.totalVisibleHeight,
-          ),
-        );
-      }
+      if (range != null) setState(() => _range = range);
     });
   }
 
@@ -128,9 +118,9 @@ class _IndexNavigationDemoState extends State<IndexNavigationDemo> {
             child: Text(
               _range == null
                   ? 'getVisibleRange(): scroll to populate'
-                  : 'getVisibleRange(): ${_range!.first} … '
-                        '${_range!.last}  '
-                        '(${_range!.height.toInt()}px visible)',
+                  : 'getVisibleRange(): ${_range!.firstIndex} … '
+                        '${_range!.lastIndex}  '
+                        '(${_range!.totalVisibleHeight.toInt()}px visible)',
             ),
           ),
         ),

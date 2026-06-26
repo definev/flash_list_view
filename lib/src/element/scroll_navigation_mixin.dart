@@ -1,19 +1,5 @@
 part of '../flash_list_view_element.dart';
 
-extension type const FlashListViewVisibleRange(
-  (int firstIndex, int lastIndex, double totalVisibleHeight) value
-) {
-  factory FlashListViewVisibleRange.create({
-    required int firstIndex,
-    required int lastIndex,
-    required double totalVisibleHeight,
-  }) => FlashListViewVisibleRange((firstIndex, lastIndex, totalVisibleHeight));
-
-  int get firstIndex => value.$1;
-  int get lastIndex => value.$2;
-  double get totalVisibleHeight => value.$3;
-}
-
 /// Programmatic scroll: jump, animate, paging, and visibility queries.
 mixin FlashListViewScrollNavigationMixin on FlashListViewElementPoolMixin {
   void jumpToIndex(int index, double offset, bool basedOnBottom) {

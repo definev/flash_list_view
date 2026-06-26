@@ -2,6 +2,7 @@ import 'package:flash_list_view/src/flash_list_view_render.dart';
 import 'package:flutter/widgets.dart';
 
 import 'flash_list_view_element.dart';
+import 'flash_list_view_visible_range.dart';
 
 class FlashSliverListController {
   final ValueNotifier<int?> stickyIndex = ValueNotifier<int?>(null);
