@@ -306,7 +306,7 @@ class FlashListViewRender extends RenderSliver
   double childMainAxisPosition(RenderBox child) {
     if (childManager.stickyElement != null &&
         childManager.stickyElement!.element.renderObject == child) {
-      return 0;
+      return stickyMainAxisDelta;
     }
     if (childManager.firstItemAlign == FirstItemAlign.end) {
       var actualScrollExtent = childManager.totalItemHeight;

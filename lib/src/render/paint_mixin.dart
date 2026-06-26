@@ -231,29 +231,38 @@ mixin FlashListViewRenderPaintMixin
       var stickyRenderObj =
           childManager.stickyElement!.element.renderObject as RenderBox?;
       if (stickyRenderObj != null && stickyRenderObj.parent == this) {
+        final double headerHeight = stickyRenderObj.size.height;
+        // Pin to the viewport line beneath any obscuring pinned slivers. With
+        // no preceding pinned sliver `overlap == 0` and this collapses to the
+        // original `offset.dy` leading-edge pin.
+        final double overlap = constraints.overlap > 0
+            ? constraints.overlap
+            : 0;
+        final double pinY = offset.dy + overlap;
         if (nextStickyOffset == null ||
-            nextStickyOffset.dy > stickyRenderObj.size.height) {
-          var stickyOffsetDy = offset.dy;
+            nextStickyOffset.dy > pinY + headerHeight) {
+          var stickyOffsetDy = pinY;
 
           if (growInfo.axisDirection == AxisDirection.up) {
             stickyOffsetDy =
                 offset.dy +
                 constraints.viewportMainAxisExtent -
-                stickyRenderObj.size.height;
+                headerHeight;
           }
           var childOffset = Offset(offset.dx, stickyOffsetDy);
           paintItem(context, stickyRenderObj, childOffset);
+          stickyMainAxisDelta = stickyOffsetDy - offset.dy;
         } else {
-          var stickyOffsetDy =
-              nextStickyOffset.dy - stickyRenderObj.size.height;
+          var stickyOffsetDy = nextStickyOffset.dy - headerHeight;
           if (growInfo.axisDirection == AxisDirection.up) {
             stickyOffsetDy =
                 constraints.viewportMainAxisExtent -
-                stickyRenderObj.size.height -
+                headerHeight -
                 stickyOffsetDy;
           }
           var childOffset = Offset(0, stickyOffsetDy);
           paintItem(context, stickyRenderObj, childOffset);
+          stickyMainAxisDelta = stickyOffsetDy - offset.dy;
         }
       }
       paintedElements.add(childManager.stickyElement!);
@@ -284,6 +293,7 @@ mixin FlashListViewRenderPaintMixin
           }
           var childOffset = Offset(offset.dx, stickyOffsetDy);
           paintItem(context, stickyRenderObj, childOffset);
+          stickyMainAxisDelta = stickyOffsetDy - offset.dy;
         } else {
           var stickyOffsetDy =
               trackedNextStickyElement!.height + nextStickyOffset.dy;
@@ -296,6 +306,7 @@ mixin FlashListViewRenderPaintMixin
           }
           var childOffset = Offset(0, stickyOffsetDy);
           paintItem(context, stickyRenderObj, childOffset);
+          stickyMainAxisDelta = stickyOffsetDy - offset.dy;
         }
       }
       paintedElements.add(childManager.stickyElement!);

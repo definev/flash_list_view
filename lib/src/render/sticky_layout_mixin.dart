@@ -5,13 +5,24 @@ mixin FlashListViewRenderStickyMixin on FlashListViewRenderCoreMixin {
   FlashListViewRenderData? trackedNextStickyElement;
 
   void determineHeaderStickyElement(BoxConstraints childConstraints) {
-    final double scrollOffset = constraints.scrollOffset;
+    // When this sliver sits beneath other pinned slivers (e.g. a pinned
+    // [SliverAppBar]) the first `overlap` pixels of our paint region are
+    // obscured. The visual "pin line" therefore sits at `scrollOffset + overlap`
+    // in our scroll coordinates, so the active section reflects the content
+    // just below the obscuring slivers rather than under them.
+    final double overlap = constraints.overlap > 0 ? constraints.overlap : 0;
+    final double scrollOffset = constraints.scrollOffset + overlap;
     final double cacheOrigin = constraints.cacheOrigin;
     final double viewportHeight = constraints.viewportMainAxisExtent;
     trackedNextStickyElement = null;
 
+    // Previously gated on `remainingPaintExtent >= viewportHeight`, which is
+    // false whenever another sliver consumes paint extent above us (a pinned
+    // app bar, a preceding sliver) and disabled sticky entirely in a composed
+    // [CustomScrollView]. `> 0` keeps sticky active whenever we are visible;
+    // when `overlap == 0` this reduces to the original full-screen behaviour.
     if (cacheOrigin <= 0 &&
-        constraints.remainingPaintExtent >= viewportHeight &&
+        constraints.remainingPaintExtent > 0 &&
         childManager.totalItemHeight > viewportHeight) {
       FlashListViewRenderData? firstElementInViewport;
       bool oldStickyInRenderedElements = false;
@@ -62,8 +73,12 @@ mixin FlashListViewRenderStickyMixin on FlashListViewRenderCoreMixin {
     final double viewportHeight = constraints.viewportMainAxisExtent;
     trackedNextStickyElement = null;
 
+    // See [determineHeaderStickyElement]: relaxed from
+    // `remainingPaintExtent >= viewportHeight` so a tailer-sticky list keeps
+    // working when composed alongside other slivers. The bottom pin line is not
+    // affected by leading-edge `overlap`, so `scrollOffset` is used as-is.
     if (cacheOrigin <= 0 &&
-        constraints.remainingPaintExtent >= viewportHeight &&
+        constraints.remainingPaintExtent > 0 &&
         childManager.totalItemHeight > viewportHeight) {
       FlashListViewRenderData? firstOrLastElementInViewport;
       bool oldStickyInRenderedElements = false;

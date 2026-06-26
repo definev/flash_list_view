@@ -475,4 +475,72 @@ void main() {
       );
     });
   });
+
+  group('sticky_under_pinned_sliver', () {
+    // Regression guard for Sliver composition: a [FlashSliverList] placed in a
+    // [CustomScrollView] beneath a pinned [SliverAppBar] must still pin its
+    // section headers. The previous `remainingPaintExtent >= viewportHeight`
+    // gate disabled sticky whenever another sliver consumed paint extent above
+    // the list, leaving stickyIndex permanently null.
+    testWidgets('section headers pin beneath a pinned SliverAppBar', (
+      tester,
+    ) async {
+      final scrollController = ScrollController();
+      final flashController = FlashSliverListController();
+      addTearDown(scrollController.dispose);
+      addTearDown(flashController.dispose);
+
+      const itemHeight = 50.0;
+      const appBarHeight = 80.0;
+      const viewportHeight = 600.0;
+      const childCount = 60;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              height: viewportHeight,
+              child: CustomScrollView(
+                controller: scrollController,
+                slivers: [
+                  const SliverAppBar(
+                    pinned: true,
+                    toolbarHeight: appBarHeight,
+                    title: Text('Pinned'),
+                  ),
+                  FlashSliverList(
+                    controller: flashController,
+                    delegate: FlashListViewDelegate(
+                      (context, index) => SizedBox(
+                        height: itemHeight,
+                        child: Text('item $index'),
+                      ),
+                      childCount: childCount,
+                      onItemHeight: (_) => itemHeight,
+                      preferItemHeight: itemHeight,
+                      onItemSticky: (index) => index % 10 == 0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Pin line in the list's scroll coordinates is `scrollOffset + overlap`,
+      // which here equals the CustomScrollView offset. At offset 300 the visual
+      // top sits within section [0, 10) so header 0 must be pinned — under the
+      // old gate this stayed null because the app bar consumed paint extent.
+      scrollController.jumpTo(300);
+      await tester.pumpAndSettle();
+      expect(flashController.stickyIndex.value, 0);
+
+      // Scrolling into the next section advances the pinned header.
+      scrollController.jumpTo(600);
+      await tester.pumpAndSettle();
+      expect(flashController.stickyIndex.value, 10);
+    });
+  });
 }

@@ -1,338 +1,106 @@
-import 'package:flash_list_view/flash_list_view.dart';
 import 'package:flutter/material.dart';
 
-/// Example: [FlashSliverList] inside [CustomScrollView] with the typing
-/// indicator as the last list item.
-void main() {
-  runApp(const FlashListViewExampleApp());
-}
+import 'demos/chat_demo.dart';
+import 'demos/index_navigation_demo.dart';
+import 'demos/reverse_demo.dart';
+import 'demos/sticky_custom_scroll_view_demo.dart';
+import 'demos/sticky_standalone_demo.dart';
+import 'demos/sticky_tailer_demo.dart';
 
-class FlashListViewExampleApp extends StatelessWidget {
-  const FlashListViewExampleApp({super.key});
+/// Gallery of focused FlashListView / FlashSliverList examples, one per case.
+void main() => runApp(const FlashListViewGalleryApp());
+
+class FlashListViewGalleryApp extends StatelessWidget {
+  const FlashListViewGalleryApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FlashSliverList Chat',
+      title: 'FlashListView gallery',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: const ChatScreen(),
+      home: const GalleryScreen(),
     );
   }
 }
 
-class ChatMessage {
-  const ChatMessage({required this.id, required this.text, required this.isMe});
+class _Demo {
+  const _Demo({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.builder,
+  });
 
-  final String id;
-  final String text;
-  final bool isMe;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final WidgetBuilder builder;
 }
 
-class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+class GalleryScreen extends StatelessWidget {
+  const GalleryScreen({super.key});
 
-  @override
-  State<ChatScreen> createState() => _ChatScreenState();
-}
-
-class _ChatScreenState extends State<ChatScreen> {
-  static const _typingIndicatorKey = 'typing-indicator';
-
-  final _scrollController = ScrollController();
-  final _flashSliverListController = FlashSliverListController();
-  final _textController = TextEditingController();
-
-  final List<ChatMessage> _messages = [
-    const ChatMessage(id: '1', text: 'Hey! How are you?', isMe: false),
-    const ChatMessage(id: '2', text: 'Doing great, thanks!', isMe: true),
-    const ChatMessage(
-      id: '3',
-      text: 'Want to try FlashSliverList?',
-      isMe: false,
+  static final List<_Demo> _demos = [
+    _Demo(
+      title: 'Sticky · standalone',
+      subtitle: 'Section headers pinned in a full-screen FlashListView',
+      icon: Icons.push_pin,
+      builder: (_) => const StickyStandaloneDemo(),
     ),
-    const ChatMessage(
-      id: '4',
-      text: 'Sure — typing indicator is the last list item.',
-      isMe: true,
+    _Demo(
+      title: 'Sticky · inside CustomScrollView',
+      subtitle: 'Headers pin under a pinned SliverAppBar; two lists + slivers',
+      icon: Icons.layers,
+      builder: (_) => const StickyCustomScrollViewDemo(),
     ),
-    const ChatMessage(
-      id: '5',
-      text: 'Scroll up to read older messages…',
-      isMe: false,
+    _Demo(
+      title: 'Sticky · pinned to bottom',
+      subtitle: 'stickyAtTailer — active header pinned at the bottom edge',
+      icon: Icons.vertical_align_bottom,
+      builder: (_) => const StickyTailerDemo(),
     ),
-    const ChatMessage(
-      id: '6',
-      text: 'The typing dots sit at the bottom.',
-      isMe: true,
+    _Demo(
+      title: 'Index navigation',
+      subtitle: 'jump / animate / ensureVisible / paging / getVisibleRange',
+      icon: Icons.my_location,
+      builder: (_) => const IndexNavigationDemo(),
     ),
-    const ChatMessage(id: '7', text: 'They scroll with the list.', isMe: false),
-    const ChatMessage(
-      id: '8',
-      text: 'Just like a normal message row.',
-      isMe: true,
+    _Demo(
+      title: 'Reverse list',
+      subtitle: 'reverse: true — index 0 at the bottom, grows upward',
+      icon: Icons.swap_vert,
+      builder: (_) => const ReverseDemo(),
+    ),
+    _Demo(
+      title: 'Chat · keepPosition',
+      subtitle: 'firstItemAlign.end + keepPosition + permanent typing row',
+      icon: Icons.chat_bubble_outline,
+      builder: (_) => const ChatDemo(),
     ),
   ];
-
-  bool _isTyping = true;
-  int _messageCounter = 9;
-
-  int get _itemCount => _messages.length + (_isTyping ? 1 : 0);
-
-  int get _typingIndicatorIndex => _messages.length;
-
-  bool _isTypingIndicator(int index) =>
-      _isTyping && index == _typingIndicatorIndex;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-  }
-
-  void _scrollToBottom() {
-    if (!_scrollController.hasClients) return;
-    final index = _isTyping ? _typingIndicatorIndex : _messages.length - 1;
-    if (index < 0) return;
-    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-  }
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _sendMessage() {
-    final text = _textController.text.trim();
-    if (text.isEmpty) return;
-
-    setState(() {
-      _messages.add(
-        ChatMessage(id: '${_messageCounter++}', text: text, isMe: true),
-      );
-    });
-    _textController.clear();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-  }
-
-  void _toggleTyping() {
-    setState(() => _isTyping = !_isTyping);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('FlashSliverList Chat'),
-        actions: [
-          IconButton(
-            tooltip: _isTyping
-                ? 'Hide typing indicator'
-                : 'Show typing indicator',
-            onPressed: _toggleTyping,
-            icon: Icon(
-              _isTyping ? Icons.more_horiz : Icons.more_horiz_outlined,
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(child: _buildMessageList()),
-          _buildInputBar(),
-        ],
-      ),
-    );
-  }
-
-  FlashListViewDelegate _buildListDelegate() {
-    return FlashListViewDelegate(
-      _buildItem,
-      childCount: _itemCount,
-      onItemKey: (index) {
-        if (_isTypingIndicator(index)) return _typingIndicatorKey;
-        return _messages[index].id;
-      },
-      keepPosition: true,
-      keepPositionOffset: 0,
-      firstItemAlign: FirstItemAlign.end,
-      expandDirectToDownWhenFirstItemAlignToEnd: true,
-      onItemHeight: (index) => _isTypingIndicator(index) ? 48 : 56,
-      preferItemHeight: 56,
-      onIsPermanent: (key) => key == _typingIndicatorKey,
-      disableCacheItems: true,
-    );
-  }
-
-  Widget _buildMessageList() {
-    return CustomScrollView(
-      controller: _scrollController,
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.only(left: 12, right: 12, bottom: 80),
-          sliver: FlashSliverList(
-            controller: _flashSliverListController,
-            delegate: _buildListDelegate(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildItem(BuildContext context, int index) {
-    if (_isTypingIndicator(index)) {
-      return const _TypingIndicator();
-    }
-    return _MessageBubble(message: _messages[index]);
-  }
-
-  Widget _buildInputBar() {
-    return Material(
-      elevation: 8,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _textController,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _sendMessage(),
-                  decoration: const InputDecoration(
-                    hintText: 'Type a message…',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filled(
-                onPressed: _sendMessage,
-                icon: const Icon(Icons.send),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message});
-
-  final ChatMessage message;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final background = message.isMe
-        ? colorScheme.primary
-        : colorScheme.surfaceContainerHighest;
-    final foreground = message.isMe
-        ? colorScheme.onPrimary
-        : colorScheme.onSurface;
-
-    return Align(
-      alignment: message.isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * 0.75,
-        ),
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(18),
-            topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(message.isMe ? 18 : 4),
-            bottomRight: Radius.circular(message.isMe ? 4 : 18),
-          ),
-        ),
-        child: Text(message.text, style: TextStyle(color: foreground)),
-      ),
-    );
-  }
-}
-
-class _TypingIndicator extends StatefulWidget {
-  const _TypingIndicator();
-
-  @override
-  State<_TypingIndicator> createState() => _TypingIndicatorState();
-}
-
-class _TypingIndicatorState extends State<_TypingIndicator>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.onSurfaceVariant;
-
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(3, (index) {
-                final phase = (_controller.value * 3 - index).clamp(0.0, 1.0);
-                final scale = 0.6 + (phase * 0.4);
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: Transform.scale(
-                    scale: scale,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.4 + phase * 0.6),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            );
-          },
-        ),
+      appBar: AppBar(title: const Text('FlashListView examples')),
+      body: ListView.separated(
+        itemCount: _demos.length,
+        separatorBuilder: (_, _) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final demo = _demos[index];
+          return ListTile(
+            leading: CircleAvatar(child: Icon(demo.icon)),
+            title: Text(demo.title),
+            subtitle: Text(demo.subtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: demo.builder)),
+          );
+        },
       ),
     );
   }

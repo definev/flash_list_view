@@ -21,6 +21,16 @@ mixin FlashListViewRenderCoreMixin on RenderSliver {
   double? scrollOffsetDifferFromLast;
   double? lastScrollOffset;
 
+  /// Main-axis paint position of the sticky element relative to this sliver's
+  /// leading edge. Computed during [paint] (it depends on the next sticky
+  /// element's position) and reused by `childMainAxisPosition` so hit-testing
+  /// and paint transforms agree with where the header is actually drawn.
+  ///
+  /// When the list is composed inside a [CustomScrollView] beneath other
+  /// pinned slivers, this includes `constraints.overlap` so the header pins to
+  /// the viewport line rather than this sliver's leading edge.
+  double stickyMainAxisDelta = 0;
+
   Size layoutItem(
     FlashListViewRenderData? spElement,
     Constraints constraints, {
