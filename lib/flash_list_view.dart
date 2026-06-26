@@ -4,3 +4,4 @@ export 'src/flash_sliver_list_controller.dart';
 export 'src/flash_list_view_delegate.dart';
 export 'src/flash_list_view_controller.dart';
 export 'src/flash_list_view_visible_range.dart';
+export 'src/flash_list_view_render.dart' show FlashListViewItemPosition;
